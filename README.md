@@ -1,0 +1,2 @@
+A drawing board with bidirectional sharing using Socket io .
+User can also send messages . 

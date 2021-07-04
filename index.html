@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        body {
+            margin: 0px;
+            padding: 30px;
+            overflow: hidden;
+            background: black;
+        }
+
+        .box {
+            display: flex;
+        }
+
+        #users {
+            height: 78vh;
+            width: 12vw;
+            border: 1px solid wheat;
+            margin-left: 15px;
+
+
+        }
+
+        h3 {
+            text-align: center;
+            color: rgb(252, 44, 207);
+        }
+
+        .tools .color-field {
+            margin-left: 40px;
+            height: 40px;
+            width: 40px;
+            min-height: 40px;
+            min-width: 40px;
+            cursor: pointer;
+            box-sizing: border-box;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        p {
+            color: white;
+        }
+
+        .tools {
+            display: flex;
+            /* justify-content: center; */
+        }
+
+        hr {
+            color: wheat;
+        }
+
+        .tools .button {
+            height: 35px;
+            border: 2px solid black;
+            font-size: medium;
+            border-radius: 20%;
+            font-weight: 700;
+            background-color: lightseagreen;
+            margin-left: 15px;
+        }
+
+        #name {
+            color: white;
+            width: 200px;
+            height: 30px;
+            margin-top: 17px;
+            font-size: 20px;
+            margin-left: 100px;
+        }
+
+        .color-picker {
+
+            align-items: center;
+            margin: 0 15px;
+            height: 50px;
+        }
+
+        .pen-range {
+            margin-left: 30px;
+            align-items: center;
+            margin: 0 15px;
+
+        }
+
+        #message {
+            margin-top: 10px;
+            height: 30px;
+            width: 300px;
+            margin-left: 10px;
+        }
+
+        #canvas {
+            box-shadow: -3px 2px 9px 6px rgb(255, 204, 255);
+            cursor: pointer;
+            margin-bottom: 25px;
+            overflow: scroll;
+            /* width: 85vw;
+            height: 85vh; */
+
+        }
+
+        p {
+
+            width: 80%;
+            margin-left: 5%;
+
+        }
+
+        #submit {
+            width: 80px;
+            height: 37px;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="field">
+
+        <div class="box">
+            <canvas id="canvas"></canvas>
+            <div id="users">
+                <h3>USERS 🟢</h3>
+                <hr>
+            </div>
+        </div>
+        <div class="tools">
+            <button onclick="undo_last()" class="button" type="button">UNDO</button>
+            <button onclick="clear_canvas()" class="button" type="button">CLEAR</button>
+            <div class="color-field" onclick="change_color(this)" style="background: red;"></div>
+            <div class="color-field" onclick="change_color(this)" style="background: blue;"></div>
+            <div class="color-field" onclick="change_color(this)" style="background: green;"></div>
+            <div class="color-field" onclick="change_color(this)" style="background: yellow;"></div>
+            <input oninput="draw_color= this.value" type="color" class="color-picker">
+            <input oninput="draw_width = this.value" type="range" min="1" max="100" class="pen-range">
+            <div id="name">WELCOME......</div>
+            <input type="text" id="message">
+            <button id="submit" onclick="karo()">SEND</button>
+        </div>
+
+
+    </div>
+    <script type="text/javascript">
+        let names = [];
+        const socket = io()
+        var room = "test";
+        socket.emit("join", room);
+        const username = prompt('Enter your name ')
+
+        socket.emit('user-joined', username);
+        socket.on('joinedi', function (data) {
+
+            let xq = (data + " is connected 👋")
+            document.getElementById('name').innerText = xq.toLocaleUpperCase();
+        })
+
+        socket.on('sendx', function (obj) {
+            console.log("id");
+            let p = document.createElement('p');
+            p.innerText = obj[0] + " : " + obj[1];
+            document.getElementById('users').append(p);
+        })
+
+        socket.on('drawkaro', function (obj) {
+            document.getElementById('name').innerText = obj[1];
+            context.lineTo(obj[2], obj[3])
+            context.strokeStyle = obj[5];
+            context.lineWidth = obj[4];
+            context.lineCap = "round";
+            context.lineJoin = "round";
+            context.stroke();
+            let q = (obj[1] + " is writing ✏️")
+            document.getElementById('name').innerText = q.toLocaleUpperCase();
+
+        })
+        socket.on('lele', function (obj) {
+            restore_array.push(context.getImageData(0, 0, canvas.width, canvas.height))
+            idx += 1;
+            console.log(idx);
+        })
+        const canvas = document.getElementById("canvas");
+
+
+
+        socket.on('startkaro', function (obj) {
+            is_drawing = true;
+            context.beginPath();
+            context.moveTo(obj[1], obj[2]);
+
+
+        })
+
+        socket.on('clearkaro', function (obj) {
+            context.fillStyle = "black";
+            context.fillRect(0, 0, obj[0], obj[1])
+            restore_array = [];
+            idx = -1;
+        })
+
+
+
+
+
+        socket.on('stopkaro', function (event) {
+            if (is_drawing) {
+                context.stroke();
+                context.closePath();
+                is_drawing = false;
+            }
+        })
+
+        socket.on('undokaro', function (data) {
+            idx -= 1;
+            restore_array.pop();
+
+            context.putImageData(restore_array[idx], 0, 0);
+        })
+
+        /////////  canvas part ///////////
+
+        canvas.width = window.innerWidth - 260;
+        canvas.height = window.innerHeight - 160;
+        let restore_array = [];
+        let idx = -1;
+        let context = canvas.getContext("2d");
+        context.fillStyle = "black";
+        context.fillRect(0, 0, canvas.width, canvas.height)
+
+
+
+
+
+
+        let draw_color = "white";
+        let draw_width = "2";
+        let is_drawing = false;
+
+
+
+
+
+        function change_color(ele) {
+
+            draw_color = ele.style.background;
+        }
+
+        function karo() {
+
+            let msg = document.getElementById('message').value;
+            console.log(msg);
+
+            let p = document.createElement('p');
+            p.innerText = "You" + " : " + msg;
+            document.getElementById('users').append(p);
+
+            socket.emit('msg', [username, msg]);
+            document.getElementById('message').innerText = "";
+
+        }
+        canvas.addEventListener('touchstart', start, false);
+        canvas.addEventListener('touchmove', draw, false);
+        canvas.addEventListener('mousedown', start, false);
+        canvas.addEventListener('mousemove', draw, false);
+        canvas.addEventListener('touchend', stope, false);
+        canvas.addEventListener('mouseup', stope, false);
+        canvas.addEventListener('mouseout', stope, false);
+        function start(event) {
+            is_drawing = true;
+            context.beginPath();
+            context.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+            let obj = [event, event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop];
+            socket.emit('start', obj)
+            event.preventDefault();
+        }
+
+        function draw(event) {
+            let a, b;
+            if (is_drawing) {
+                document.getElementById('name').innerText = "WRITING ✏️"
+                context.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop - 10)
+
+                context.strokeStyle = draw_color;
+                context.lineWidth = draw_width;
+                context.lineCap = "round";
+                context.lineJoin = "round";
+                context.stroke();
+
+                let obj = [event, username, event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop, draw_width, draw_color];
+                socket.emit('draw', obj)
+                console.log(event.type);
+
+            }
+            event.preventDefault();
+
+        }
+
+        function stope(event) {
+            if (is_drawing) {
+                context.stroke();
+                context.closePath();
+                is_drawing = false;
+
+            }
+            if (event.type != 'mouseout') {
+                restore_array.push(context.getImageData(0, 0, canvas.width, canvas.height))
+                idx += 1;
+                socket.emit('stop', event)
+            }
+            if (event.type == 'mouseup' && event.type != 'mouseout') {
+                let obj = [event, username, event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop, draw_width, draw_color];
+                socket.emit('lelo', obj)
+            }
+            console.log(idx);
+            event.preventDefault();
+
+        }
+
+
+        function clear_canvas() {
+            context.fillStyle = "black";
+            context.fillRect(0, 0, canvas.width, canvas.height)
+            restore_array = [];
+            idx = -1;
+            socket.emit('clear', [canvas.width, canvas.height]);
+        }
+
+        function undo_last() {
+
+            if (idx <= 0) {
+                clear_canvas();
+                socket.emit('clear', [canvas.width, canvas.height]);
+            }
+            else {
+
+                idx -= 1;
+                restore_array.pop();
+
+                context.putImageData(restore_array[idx], 0, 0);
+
+                socket.emit('undoo', "sk")
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
