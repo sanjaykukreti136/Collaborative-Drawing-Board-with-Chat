@@ -137,7 +137,7 @@
             </div>
         </div>
         <div class="tools">
-            <button class="button" id="dark" onclick="dark()">LIGHT</button>
+          
             <button onclick="undo_last()" class="button" type="button">UNDO</button>
             <button onclick="clear_canvas()" class="button" type="button">CLEAR</button>
             <div class="color-field" onclick="change_color(this)" style="background: red;"></div>
@@ -251,25 +251,6 @@
         let is_drawing = false;
 
         let c = 0;
-        function dark() {
-            c += 1;
-            if (c % 2 != 0) {
-                document.getElementById('dark').innerText = "DARK";
-                context.fillStyle = "white";
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                draw_color = "black";
-                document.getElementById('fiel').style.backgroundColor = "white";
-                document.querySelector('body').style.backgroundColor = "white";
-            }
-            else {
-                document.getElementById('dark').innerText = "LIGHT";
-                context.fillStyle = "black";
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                draw_color = "white";
-                document.getElementById('fiel').style.backgroundColor = "black";
-                document.querySelector('body').style.backgroundColor = "black";
-            }
-        }
 
 
         function change_color(ele) {
